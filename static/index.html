@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrape.do - Token Collector & Tester</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 900px;
+            position: relative;
+            overflow: hidden;
+        }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p { color: #666; font-size: 1.1em; }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; font-size: 1.1em; }
+        .form-group input {
+            width: 100%; padding: 15px; border: 2px solid #e1e5e9; border-radius: 10px;
+            font-size: 1em; transition: all 0.3s ease; background: #f8f9fa;
+        }
+        .form-group input:focus { outline: none; border-color: #667eea; background: white; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .button-group { display: flex; gap: 15px; margin-top: 30px; flex-wrap: wrap; justify-content: center; }
+        .btn { flex: 1; padding: 15px 25px; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 600; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden; min-width: 200px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .status { margin-top: 20px; padding: 15px; border-radius: 10px; font-weight: 600; }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .result { margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #667eea; }
+        .hidden { display: none; }
+        .log-container { margin-top: 30px; background: #f8f9fa; border-radius: 15px; padding: 25px; max-height: 500px; overflow-y: auto; border: 2px solid #e1e5e9; min-height: 300px; }
+        .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e1e5e9; }
+        .log-header h3 { color: #333; font-size: 1.2em; margin: 0; }
+        .clear-logs-btn { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; }
+        .clear-logs-btn:hover { background: #c82333; }
+        .log-message { padding: 12px; margin: 6px 0; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.85em; line-height: 1.3; border-left: 4px solid #007bff; word-wrap: break-word; white-space: pre-wrap; }
+        .log-message.info { background: #e3f2fd; border-left-color: #2196f3; }
+        .log-message.success { background: #e8f5e8; border-left-color: #4caf50; }
+        .log-message.warning { background: #fff3e0; border-left-color: #ff9800; }
+        .log-message.error { background: #ffebee; border-left-color: #f44336; }
+        .log-time { color: #666; font-size: 0.8em; margin-right: 10px; }
+        .log-content { color: #333; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        .token-counter { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .counter-item { display: flex; align-items: center; gap: 12px; flex: 1; justify-content: center; min-width: 200px; }
+        .counter-label { font-weight: 600; font-size: 0.9em; }
+        .counter-value { background: rgba(255, 255, 255, 0.2); padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 1.1em; min-width: 60px; text-align: center; }
+        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .popup-content { background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); animation: popupSlideIn 0.3s ease-out; }
+        @keyframes popupSlideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        .popup-header { margin-bottom: 20px; }
+        .popup-title { font-size: 1.5em; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .popup-subtitle { color: #666; font-size: 1em; }
+        .test-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+        .result-item { background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea; }
+        .result-label { font-size: 0.9em; color: #666; margin-bottom: 5px; }
+        .result-value { font-size: 1.3em; font-weight: bold; color: #333; }
+        .result-value.success { color: #28a745; }
+        .result-value.error { color: #dc3545; }
+        .popup-close { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-top: 20px; }
+        .popup-close:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Scrape.do</h1>
+            <p>Token Collector & API Tester</p>
+        </div>
+        <div class="token-counter">
+            <div class="counter-item">
+                <span class="counter-label">Active Tokens:</span>
+                <span id="activeTokenCount" class="counter-value">0</span>
+            </div>
+            <div class="counter-item">
+                <span class="counter-label">Request Rate:</span>
+                <span id="requestRate" class="counter-value">0 req/s</span>
+            </div>
+            <div class="counter-item">
+                <span class="counter-label">Last Update:</span>
+                <span id="lastUpdateTime" class="counter-value">-</span>
+            </div>
+        </div>
+        <form id="testForm">
+            <div class="form-group">
+                <label for="total_requests">Total Requests:</label>
+                <input type="number" id="total_requests" name="total_requests" placeholder="e.g. 2000" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="url">URL:</label>
+                <input type="url" id="url" name="url" placeholder="https://example.com" required>
+            </div>
+            <div class="button-group">
+                <button type="button" id="stopCollectBtn" class="btn btn-danger">Stop Collection</button>
+                <button type="button" id="testBtn" class="btn btn-success">Start Test</button>
+                <button type="button" id="stopTestBtn" class="btn btn-warning" style="display: none;">Stop Test</button>
+            </div>
+        </form>
+        <div class="log-container">
+            <div class="log-header">
+                <h3>Real-time Logs</h3>
+                <button class="clear-logs-btn" onclick="clearLogs()">Clear</button>
+            </div>
+            <div id="logMessages"></div>
+        </div>
+        <div id="status" class="status hidden"></div>
+        <div id="result" class="result hidden"></div>
+    </div>
+    <div id="testResultsPopup" class="popup-overlay">
+        <div class="popup-content">
+            <div class="popup-header">
+                <div class="popup-title">Test Completed</div>
+                <div class="popup-subtitle">The test results are shown below</div>
+            </div>
+            <div class="test-results">
+                <div class="result-item">
+                    <div class="result-label">Successful Requests</div>
+                    <div id="successCount" class="result-value success">0</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Failed Requests</div>
+                    <div id="errorCount" class="result-value error">0</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Total Requests</div>
+                    <div id="totalCount" class="result-value">0</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Test Duration</div>
+                    <div id="testDuration" class="result-value">0s</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Average Speed</div>
+                    <div id="avgSpeed" class="result-value">0 req/s</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Success Rate</div>
+                    <div id="successRate" class="result-value">0%</div>
+                </div>
+            </div>
+            <button class="popup-close" onclick="closeTestResultsPopup()">OK</button>
+        </div>
+    </div>
+    <script>
+        let ws = null;
+        let tokensCollected = false;
+        let tokenUpdateInterval = null;
+        let testStartTime = null;
+        let testResults = { success: 0, error: 0, total: 0, duration: 0 };
+        function updateTokenCount() {
+            fetch('/api/token-count')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('activeTokenCount').textContent = data.count;
+                    document.getElementById('lastUpdateTime').textContent = data.last_update;
+                })
+                .catch(error => { console.error('Token count update error:', error); });
+        }
+        function updateRequestRate() {
+            fetch('/api/request-rate')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('requestRate').textContent = data.rate + ' req/s';
+                })
+                .catch(error => { console.error('Request rate update error:', error); });
+        }
+        updateTokenCount();
+        updateRequestRate();
+        tokenUpdateInterval = setInterval(updateTokenCount, 5000);
+        setInterval(updateRequestRate, 2000);
+        setTimeout(() => {
+            fetch('/api/token-count')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        tokensCollected = true;
+                        document.getElementById('testBtn').disabled = false;
+                        showStatus(`${data.count} active tokens found. You can start the test.`, 'success');
+                    }
+                })
+                .catch(error => { console.error('Initial token count check error:', error); });
+        }, 1000);
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.classList.remove('hidden');
+        }
+        function hideStatus() { document.getElementById('status').classList.add('hidden'); }
+        function addLogMessage(message, level = 'info', time = null) {
+            const logContainer = document.getElementById('logMessages');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log-message ${level}`;
+            const timestamp = time || new Date().toLocaleTimeString();
+            logDiv.innerHTML = `
+                <span class="log-time">[${timestamp}]</span>
+                <span class="log-content">${message}</span>
+            `;
+            logContainer.appendChild(logDiv);
+            setTimeout(() => { logContainer.scrollTop = logContainer.scrollHeight; }, 10);
+        }
+        function clearLogs() { document.getElementById('logMessages').innerHTML = ''; }
+        function showTestResultsPopup() {
+            const popup = document.getElementById('testResultsPopup');
+            const successCount = document.getElementById('successCount');
+            const errorCount = document.getElementById('errorCount');
+            const totalCount = document.getElementById('totalCount');
+            const testDuration = document.getElementById('testDuration');
+            const avgSpeed = document.getElementById('avgSpeed');
+            const successRate = document.getElementById('successRate');
+            successCount.textContent = testResults.success;
+            errorCount.textContent = testResults.error;
+            totalCount.textContent = testResults.total;
+            testDuration.textContent = testResults.duration + 's';
+            const avgSpeedValue = testResults.duration > 0 ? (testResults.total / testResults.duration).toFixed(1) : 0;
+            avgSpeed.textContent = avgSpeedValue + ' req/s';
+            const successRateValue = testResults.total > 0 ? ((testResults.success / testResults.total) * 100).toFixed(1) : 0;
+            successRate.textContent = successRateValue + '%';
+            popup.style.display = 'flex';
+        }
+        function closeTestResultsPopup() { document.getElementById('testResultsPopup').style.display = 'none'; }
+        function scrollToBottom() { const logContainer = document.getElementById('logMessages'); logContainer.scrollTop = logContainer.scrollHeight; }
+        function startCollection() {
+            const total_requests = document.getElementById('total_requests').value;
+            const url = document.getElementById('url').value;
+            if (!total_requests || !url) { showStatus('Please fill in all fields.', 'error'); return; }
+            showStatus('Continuous token collection started. 5 tokens every 30 seconds.', 'success');
+            addLogMessage('Continuous token collection started', 'info');
+            fetch('/api/collect-tokens', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ concurrent_requests: 5, total_requests: parseInt(total_requests), url: url })
+            })
+            .then(response => response.json())
+            .then(data => { if (!data.success) { showStatus('Failed to start token collection.', 'error'); } })
+            .catch(error => { console.error('Error:', error); showStatus('An error occurred.', 'error'); });
+        }
+        function stopCollection() {
+            fetch('/api/stop-collection', { method: 'POST', headers: { 'Content-Type': 'application/json' }})
+            .then(response => response.json())
+            .then(data => { showStatus('Token collection stopped.', 'warning'); addLogMessage('Token collection stopped', 'warning'); })
+            .catch(error => { console.error('Error:', error); showStatus('Failed to stop collection.', 'error'); });
+        }
+        function startTest() {
+            const total_requests = document.getElementById('total_requests').value;
+            const url = document.getElementById('url').value;
+            if (!total_requests || !url) { showStatus('Please fill in all fields.', 'error'); return; }
+            testResults = { success: 0, error: 0, total: parseInt(total_requests), duration: 0 };
+            testStartTime = Date.now();
+            document.getElementById('testBtn').style.display = 'none';
+            document.getElementById('stopTestBtn').style.display = 'inline-block';
+            showStatus('Test started. You can follow real-time logs.', 'success');
+            addLogMessage('Test started', 'info');
+            if (!ws || ws.readyState !== WebSocket.OPEN) { initWebSocket(); }
+            fetch('/api/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ concurrent_requests: 5, total_requests: parseInt(total_requests), url: url })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    showStatus('Failed to start test.', 'error');
+                    document.getElementById('testBtn').style.display = 'inline-block';
+                    document.getElementById('stopTestBtn').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showStatus('An error occurred.', 'error');
+                document.getElementById('testBtn').style.display = 'inline-block';
+                document.getElementById('stopTestBtn').style.display = 'none';
+            });
+        }
+        function stopTest() {
+            document.getElementById('testBtn').style.display = 'inline-block';
+            document.getElementById('stopTestBtn').style.display = 'none';
+            fetch('/api/stop-test', { method: 'POST', headers: { 'Content-Type': 'application/json' }})
+            .then(response => response.json())
+            .then(data => { showStatus('Test stopped.', 'warning'); addLogMessage('Test stopped', 'warning'); })
+            .catch(error => { console.error('Error:', error); showStatus('Failed to stop test.', 'error'); });
+        }
+        document.getElementById('stopCollectBtn').addEventListener('click', stopCollection);
+        document.getElementById('testBtn').addEventListener('click', startTest);
+        document.getElementById('stopTestBtn').addEventListener('click', stopTest);
+        function initWebSocket() {
+            ws = new WebSocket(`ws://${window.location.host}/ws`);
+            ws.onopen = function() { console.log('WebSocket connected'); };
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'log') {
+                    addLogMessage(data.message, data.level, data.time);
+                    if (data.message && data.message.includes('Dynamic test completed')) {
+                        if (testStartTime) { testResults.duration = Math.round((Date.now() - testStartTime) / 1000); }
+                        const match = data.message.match(/Success: (\d+), Error: (\d+)/);
+                        if (match) { testResults.success = parseInt(match[1]); testResults.error = parseInt(match[2]); }
+                        document.getElementById('testBtn').style.display = 'inline-block';
+                        document.getElementById('stopTestBtn').style.display = 'none';
+                        showStatus('Test completed. You can start a new one.', 'success');
+                        setTimeout(() => { showTestResultsPopup(); }, 1000);
+                    }
+                }
+            };
+            ws.onerror = function(error) { console.error('WebSocket error:', error); };
+            ws.onclose = function() { console.log('WebSocket disconnected, reconnecting...'); setTimeout(initWebSocket, 3000); };
+        }
+        initWebSocket();
+        setTimeout(() => { startCollection(); }, 2000);
+    </script>
+</body>
+</html> 

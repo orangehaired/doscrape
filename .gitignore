@@ -1,0 +1,5 @@
+.idea
+*.txt
+node_modules
+package*
+doscrape
