@@ -764,11 +764,19 @@ func (app *Application) runDockerContainer(containerID int, url string) Containe
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
+	hostPath, err := filepath.Abs("./results")
+	if err != nil {
+		return ContainerResult{
+			Success: false,
+			Error:   fmt.Sprintf("can't resolve results path: %v", err),
+		}
+	}
+
 	args := []string{"run",
 		"--name", containerName,
 		"--env", fmt.Sprintf("TARGET_URL=%s", url),
 		"--env", fmt.Sprintf("CONTAINER_ID=%d", containerID), // Just metadata
-		"--volume", "./results:/app/results",
+		"--volume", fmt.Sprintf("%s:/app/results", hostPath),
 	}
 
 	if proxy != "" {
