@@ -51,7 +51,7 @@ type StartTestReq struct {
 	URL                string `json:"url"`
 }
 
-type FrontendResponse struct {
+type Response struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 	Data    string `json:"data,omitempty"`
@@ -163,7 +163,7 @@ func (app *Application) handleTest(w gohttp.ResponseWriter, r *gohttp.Request) {
 
 	tokens := app.loadTokensFromResults()
 	if len(tokens) == 0 {
-		json.NewEncoder(w).Encode(FrontendResponse{
+		json.NewEncoder(w).Encode(Response{
 			Success: false,
 			Message: "No tokens available",
 		})
@@ -173,7 +173,7 @@ func (app *Application) handleTest(w gohttp.ResponseWriter, r *gohttp.Request) {
 	go app.runDynamicTest(req.TotalRequests, req.URL)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(FrontendResponse{
+	json.NewEncoder(w).Encode(Response{
 		Success: true,
 		Message: "Dynamic test started (speed based tokens)",
 	})
@@ -185,7 +185,7 @@ func (app *Application) handleStopTest(w gohttp.ResponseWriter, r *gohttp.Reques
 	app.collector.mu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(FrontendResponse{
+	json.NewEncoder(w).Encode(Response{
 		Success: true,
 		Message: "Dynamic test stopped.",
 	})
@@ -197,7 +197,7 @@ func (app *Application) handleStopCollection(w gohttp.ResponseWriter, r *gohttp.
 	app.collector.mu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(FrontendResponse{
+	json.NewEncoder(w).Encode(Response{
 		Success: true,
 		Message: "Token collection stopped.",
 	})
